@@ -13,9 +13,12 @@ public class PlayerMovement : MonoBehaviour
     public Transform playerBody; // Reference to the player's body or root GameObject
     public Transform cameraTransform; // Reference to the player's camera transform
 
+    public GameObject lockUI; // Reference to the lock UI GameObject
+
     private Rigidbody rb;
     private Actions actions;
     private bool isGrounded;
+    private bool isLocked = false; // Flag to track whether the player is interacting with the lock UI
 
     private float verticalRotation = 0f; // Current vertical rotation of the camera
 
@@ -48,6 +51,9 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
+        if (isLocked)
+            return; // Don't update player movement if locked
+
         // Perform a raycast downwards to check if the player is grounded
         RaycastHit hit;
         if (Physics.Raycast(transform.position, Vector3.down, out hit, 0.1f)) // Adjust the raycast distance as needed
@@ -89,7 +95,7 @@ public class PlayerMovement : MonoBehaviour
 
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
-                    actions.Run();
+                    actions.Walk();
                     currentSpeed *= runSpeedMultiplier;
                 }
 
@@ -107,7 +113,7 @@ public class PlayerMovement : MonoBehaviour
                 // Jump
                 if (Input.GetKeyDown(KeyCode.Space)) // Only allow jumping when grounded
                 {
-                    actions.Jump();
+                    actions.Walk();
                     rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
                 }
             }
@@ -138,20 +144,36 @@ public class PlayerMovement : MonoBehaviour
         rb.AddForce(Vector3.up * gravity, ForceMode.Acceleration);
     }
 
-
-
-
     private void RotateCameraVertical(float mouseY)
     {
         // Rotate the camera vertically
         verticalRotation -= mouseY;
-        verticalRotation = Mathf.Clamp(verticalRotation, -53f, 90f);
+        verticalRotation = Mathf.Clamp(verticalRotation, -90f, 53f);
 
         Vector3 currentRotation = cameraTransform.localEulerAngles;
         currentRotation.x = verticalRotation;
         cameraTransform.localEulerAngles = currentRotation;
     }
+
+    public void LockPlayerMovement(bool lockMovement)
+    {
+        isLocked = lockMovement;
+
+        // Show/hide mouse cursor based on lockMovement
+        Cursor.visible = lockMovement;
+
+        // Lock cursor to center of screen if movement is locked
+        if (lockMovement)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.None;
+        }
+    }
 }
+
 
 
 

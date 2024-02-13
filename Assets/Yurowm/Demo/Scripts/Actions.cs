@@ -68,4 +68,12 @@ public class Actions : MonoBehaviour {
 		animator.SetBool ("Squat", !animator.GetBool("Squat"));
 		animator.SetBool("Aiming", false);
 	}
+
+	public void Reset()
+	{
+		animator.SetBool("Squat", false);
+		animator.SetFloat("Speed", 0f);
+		animator.SetBool("Aiming", false);
+		animator.SetInteger("DamageID", 0);
+	}
 }
