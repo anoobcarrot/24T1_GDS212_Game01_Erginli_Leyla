@@ -35,7 +35,6 @@ public class TaskManager : MonoBehaviour
         // Enable the task UI after voice playback
         taskText.gameObject.SetActive(true);
         UpdateTaskList("Move around with WASD");
-        sanityBar.ResumeSanityDrain();
 
         areTasksShown = true; // Set tasks shown flag
     }
@@ -124,7 +123,8 @@ public class TaskManager : MonoBehaviour
     // Public method to update task to "Unlock the Door"
     public void UpdateLevel1Task()
     {
-        taskText.text = "Unlock the Door";
+        taskText.text = "Unlock the Door \nHint: You can interact with objects around with left click";
+        sanityBar.ResumeSanityDrain();
         sanityBar.ResetSanity();
     }
 }
