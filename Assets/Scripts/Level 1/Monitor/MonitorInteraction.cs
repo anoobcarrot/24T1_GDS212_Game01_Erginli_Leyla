@@ -9,12 +9,17 @@ public class MonitorInteraction : MonoBehaviour
     public TMP_InputField passwordInput;
     public TextMeshProUGUI statusText;
     public GameObject patientFilesUI;
+    public GameObject websiteUI; // Reference to the website UI canvas
+    public Button[] websiteButtons; // Array of buttons in the website UI
+    public string[] websiteTextArray; // Array of text for the website UI
     public string correctPassword = "Power321";
     public float interactionRadius = 3f;
 
     public PlayerMovement playerMovement; // Reference to the PlayerMovement script
 
     private bool passwordCorrect = false;
+
+    public TextMeshProUGUI websiteText; // TextMeshProUGUI for website text
 
     void Update()
     {
@@ -29,11 +34,14 @@ public class MonitorInteraction : MonoBehaviour
             {
                 ClosePatientFilesUI();
             }
+            else if (websiteUI.activeSelf) // Close website UI if active
+            {
+                CloseWebsiteUI();
+            }
             return; // Exit the method to prevent further interaction checks if the UI is closed
         }
 
-        // Check for input to open the monitor UI
-        if (Input.GetMouseButtonDown(0) && !monitorScreen.activeSelf && !patientFilesUI.activeSelf) // Left click
+        if (!websiteUI.activeSelf && Input.GetMouseButtonDown(0) && !monitorScreen.activeSelf && !patientFilesUI.activeSelf) // Left click
         {
             RaycastHit hit;
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -42,8 +50,8 @@ public class MonitorInteraction : MonoBehaviour
             {
                 if (hit.collider.gameObject == monitorObject)
                 {
-                    // Check if the player is within the interaction radius
-                    float distance = Vector3.Distance(hit.point, transform.position);
+                    // Check if the distance between the player and the monitor object is within the interaction radius
+                    float distance = Vector3.Distance(transform.position, Camera.main.transform.position);
                     if (distance <= interactionRadius)
                     {
                         // Player is within interaction radius, show monitor UI
@@ -128,6 +136,12 @@ public class MonitorInteraction : MonoBehaviour
             // Show the patient files UI canvas
             patientFilesUI.SetActive(true);
 
+            // lock player movement when canvas open
+            playerMovement.LockPlayerMovement(true);
+            // Lock the cursor
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
             // Hide the monitor UI canvas
             monitorScreen.SetActive(false);
         }
@@ -147,4 +161,56 @@ public class MonitorInteraction : MonoBehaviour
         // Reset password input field and status text
         ResetPasswordUI();
     }
+
+    public void UpdateWebsiteText(int index)
+    {
+        // Check if the index is within the array bounds
+        if (index >= 0 && index < websiteTextArray.Length)
+        {
+            // Update the website text
+            websiteText.text = websiteTextArray[index];
+        }
+    }
+
+    public void OpenWebsiteUI()
+    {
+        websiteUI.SetActive(true); // Activate the website UI
+        patientFilesUI.SetActive(false);
+
+        // lock player movement when canvas open
+        playerMovement.LockPlayerMovement(true);
+        // Lock the cursor
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    public void CloseWebsiteUI()
+    {
+        websiteUI.SetActive(false); // Deactivate the website UI
+
+        // Reset website text to nothing
+        websiteText.text = "";
+
+        // Reset website page content
+        ResetWebsitePage();
+
+        // unlock player movement when canvas closed
+        playerMovement.LockPlayerMovement(false);
+        // Lock the cursor
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    void ResetWebsitePage()
+    {
+        // Reset website text to nothing
+        websiteText.text = "";
+    }
 }
+
+
+
+
+
+
+

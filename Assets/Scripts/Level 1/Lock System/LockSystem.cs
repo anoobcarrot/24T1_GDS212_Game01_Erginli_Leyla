@@ -6,6 +6,8 @@ public class LockSystem : MonoBehaviour
     public PlayerMovement playerMovement; // Reference to the PlayerMovement script
     public GameObject lockObject; // Reference to the lock GameObject
 
+    public float interactionRadius = 3f;
+
     private Camera mainCamera;
 
     private void Start()
@@ -16,19 +18,23 @@ public class LockSystem : MonoBehaviour
 
     private void Update()
     {
-        // Cast a ray from the main camera's position forward
-        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-
-        // Check if the ray hits the lock object
-        if (Physics.Raycast(ray, out hit))
+        // Check for mouse click to interact
+        if (Input.GetMouseButtonDown(0))
         {
-            if (hit.collider.gameObject == lockObject)
+            // Cast a ray from the main camera's position forward
+            Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+
+            // Check if the ray hits the lock object
+            if (Physics.Raycast(ray, out hit))
             {
-                // Check for mouse click to interact
-                if (Input.GetMouseButtonDown(0))
+                if (hit.collider.gameObject == lockObject)
                 {
-                    OpenLockPanel();
+                    float distance = Vector3.Distance(transform.position, Camera.main.transform.position);
+                    if (distance <= interactionRadius)
+                    {
+                        OpenLockPanel();
+                    }
                 }
             }
         }

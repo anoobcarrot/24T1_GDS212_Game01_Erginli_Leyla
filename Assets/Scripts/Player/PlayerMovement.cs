@@ -4,93 +4,60 @@ public class PlayerMovement : MonoBehaviour
 {
     public float walkSpeed = 5f;
     public float runSpeedMultiplier = 2f;
-    public float crouchSpeedMultiplier = 0.5f;
     public float jumpForce = 10f;
     public float gravity = -2f;
     public float lookSensitivity = 2f;
-
-    public Animator playerAnimator; // Reference to the player's Animator component
-    public Transform playerBody; // Reference to the player's body or root GameObject
-    public Transform cameraTransform; // Reference to the player's camera transform
-
-    public GameObject lockUI; // Reference to the lock UI GameObject
+    public CapsuleCollider playerCollider;
+    public Animator playerAnimator;
+    public Transform playerBody;
+    public Transform cameraTransform;
+    public string obstacleTag = "Ceiling";
 
     private Rigidbody rb;
     private Actions actions;
     private bool isGrounded;
-    private bool isLocked = false; // Flag to track whether the player is interacting with the lock UI
-
-    private float verticalRotation = 0f; // Current vertical rotation of the camera
+    private bool isCrouching = false;
+    private bool isLocked = false;
+    private float verticalRotation = 0f;
+    private Vector3 originalCameraPosition;
+    private float originalColliderHeight;
+    private float originalColliderCenterY;
+    private float crouchSpeed;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
-        actions = GetComponent<Actions>(); // Get the Actions component
-        Cursor.lockState = CursorLockMode.Locked; // Lock cursor to center of screen
-    }
+        actions = GetComponent<Actions>();
+        Cursor.lockState = CursorLockMode.Locked;
 
-    private void OnCollisionStay(Collision collision)
-    {
-        // Check if the player is grounded when colliding with objects tagged as ground
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            isGrounded = true;
-        }
-    }
+        originalCameraPosition = cameraTransform.localPosition;
+        originalColliderHeight = playerCollider.height;
+        originalColliderCenterY = playerCollider.center.y;
 
-    private void OnCollisionExit(Collision collision)
-    {
-        // Check if the player is not grounded when exiting collision with objects tagged as ground
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            isGrounded = false;
-        }
+        // Calculate crouch speed as half of the walk speed
+        crouchSpeed = walkSpeed * 0.5f;
     }
-
-    private bool wasMoving = false; // Flag to track if the player was previously moving
 
     private void Update()
     {
         if (isLocked)
-            return; // Don't update player movement if locked
+            return;
 
-        // Perform a raycast downwards to check if the player is grounded
-        RaycastHit hit;
-        if (Physics.Raycast(transform.position, Vector3.down, out hit, 0.1f)) // Adjust the raycast distance as needed
-        {
-            isGrounded = true;
-        }
-        else
-        {
-            isGrounded = false;
-        }
+        isGrounded = Physics.Raycast(transform.position, Vector3.down, 0.1f);
 
-        // Player movement
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
-
-        // Check if there is movement input
         bool isMoving = Mathf.Abs(horizontalInput) > 0 || Mathf.Abs(verticalInput) > 0;
 
-        // Check if the player is grounded for movement and jumping
         if (isGrounded)
         {
-            // Check if the player is moving or attempting to jump
             if (isMoving || Input.GetKeyDown(KeyCode.Space))
             {
-                // Trigger walk animation if moving, otherwise trigger idle animation
                 if (isMoving)
-                {
                     actions.Walk();
-                    wasMoving = true; // Set the flag indicating the player was moving
-                }
                 else
-                {
                     actions.Stay();
-                    wasMoving = false; // Reset the flag since the player is not moving
-                }
 
-                // Apply movement speed
                 float currentSpeed = walkSpeed;
 
                 if (Input.GetKey(KeyCode.LeftShift))
@@ -101,52 +68,53 @@ public class PlayerMovement : MonoBehaviour
 
                 if (Input.GetKey(KeyCode.LeftControl))
                 {
-                    currentSpeed *= crouchSpeedMultiplier;
+                    currentSpeed = crouchSpeed;
+                    isCrouching = true;
+                    Crouch();
+                }
+                else if (isCrouching && !IsObstacleAbove())
+                {
+                    isCrouching = false;
+                    Uncrouch();
                 }
 
-                // Apply movement
+                if (playerCollider.height == originalColliderHeight / 2f)
+                {
+                    currentSpeed = crouchSpeed;
+                }
+
                 Vector3 moveDirection = playerBody.right * horizontalInput + playerBody.forward * verticalInput;
                 Vector3 velocity = moveDirection.normalized * currentSpeed;
-                velocity.y = rb.velocity.y; // Preserve vertical velocity
+                velocity.y = rb.velocity.y;
                 rb.velocity = velocity;
 
-                // Jump
-                if (Input.GetKeyDown(KeyCode.Space)) // Only allow jumping when grounded
+                if (Input.GetKeyDown(KeyCode.Space))
                 {
                     actions.Walk();
                     rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
                 }
             }
-            else if (wasMoving) // Check if the player was previously moving
+            else
             {
-                // Player stopped moving, trigger idle animation
                 actions.Stay();
-                wasMoving = false; // Reset the flag
             }
 
-            // Mouse look
             float mouseX = Input.GetAxis("Mouse X") * lookSensitivity;
             float mouseY = Input.GetAxis("Mouse Y") * lookSensitivity;
 
-            // Rotate the player's body left/right
             playerBody.Rotate(Vector3.up * mouseX);
-
-            // Rotate the camera vertically
             RotateCameraVertical(mouseY);
         }
         else
         {
-            // Player is not grounded
-            actions.Stay(); // Trigger idle animation
+            actions.Stay();
         }
 
-        // Apply gravity
         rb.AddForce(Vector3.up * gravity, ForceMode.Acceleration);
     }
 
     private void RotateCameraVertical(float mouseY)
     {
-        // Rotate the camera vertically
         verticalRotation -= mouseY;
         verticalRotation = Mathf.Clamp(verticalRotation, -90f, 53f);
 
@@ -155,14 +123,46 @@ public class PlayerMovement : MonoBehaviour
         cameraTransform.localEulerAngles = currentRotation;
     }
 
+    private void Crouch()
+    {
+        cameraTransform.localPosition = originalCameraPosition / 2f;
+
+        if (playerCollider.height != originalColliderHeight / 2f)
+        {
+            playerCollider.height = originalColliderHeight / 2f;
+            playerCollider.center = new Vector3(playerCollider.center.x, originalColliderCenterY / 2f, playerCollider.center.z);
+        }
+    }
+
+    private void Uncrouch()
+    {
+        cameraTransform.localPosition = originalCameraPosition;
+
+        if (playerCollider.height != originalColliderHeight)
+        {
+            playerCollider.height = originalColliderHeight;
+            playerCollider.center = new Vector3(playerCollider.center.x, originalColliderCenterY, playerCollider.center.z);
+        }
+    }
+
+    private bool IsObstacleAbove()
+    {
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, 1.5f); // check colliders within 1.5 units of the player
+        foreach (Collider collider in hitColliders)
+        {
+            if (collider.CompareTag(obstacleTag))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void LockPlayerMovement(bool lockMovement)
     {
         isLocked = lockMovement;
-
-        // Show/hide mouse cursor based on lockMovement
         Cursor.visible = lockMovement;
 
-        // Lock cursor to center of screen if movement is locked
         if (lockMovement)
         {
             Cursor.lockState = CursorLockMode.Locked;
@@ -173,14 +173,3 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
