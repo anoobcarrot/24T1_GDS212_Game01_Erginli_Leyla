@@ -7,11 +7,17 @@ public class PlayerMovement : MonoBehaviour
     public float jumpForce = 10f;
     public float gravity = -2f;
     public float lookSensitivity = 2f;
+
+    public OptionsManager optionsManager;
+
     public CapsuleCollider playerCollider;
     public Animator playerAnimator;
     public Transform playerBody;
     public Transform cameraTransform;
     public string obstacleTag = "Ceiling";
+
+    public AudioClip footstepSound; // Footstep audio clip
+    public AudioSource audioSource; // AudioSource for playing footstep sound
 
     private Rigidbody rb;
     private Actions actions;
@@ -36,6 +42,16 @@ public class PlayerMovement : MonoBehaviour
 
         // Calculate crouch speed as half of the walk speed
         crouchSpeed = walkSpeed * 0.5f;
+    }
+
+    public void UpdateLookSensitivity(float sensitivity)
+    {
+        lookSensitivity = sensitivity;
+    }
+
+    public bool IsMovementLocked
+    {
+        get { return isLocked; }
     }
 
     private void Update()
@@ -97,6 +113,12 @@ public class PlayerMovement : MonoBehaviour
             else
             {
                 actions.Stay();
+
+                // Stop footstep sound when not moving
+                if (audioSource.isPlaying)
+                {
+                    audioSource.Stop();
+                }
             }
 
             float mouseX = Input.GetAxis("Mouse X") * lookSensitivity;
@@ -111,6 +133,12 @@ public class PlayerMovement : MonoBehaviour
         }
 
         rb.AddForce(Vector3.up * gravity, ForceMode.Acceleration);
+
+        // Play footstep sound if moving and not crouching
+        if (isMoving && !isCrouching && footstepSound && audioSource && !audioSource.isPlaying)
+        {
+            audioSource.PlayOneShot(footstepSound);
+        }
     }
 
     private void RotateCameraVertical(float mouseY)

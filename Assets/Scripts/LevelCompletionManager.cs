@@ -12,6 +12,7 @@ public class LevelCompletionManager : MonoBehaviour
     public GameObject taskUI;
 
     public PlayerMovement playerMovement; // Reference to the PlayerMovement script
+    public OptionsMenu optionsMenu; // Reference to the OptionsMenu script
 
     private AudioSource audioSource;
     private float startTime;

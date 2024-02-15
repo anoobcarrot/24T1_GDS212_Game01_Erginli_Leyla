@@ -24,14 +24,13 @@ public class SanityBar : MonoBehaviour
     public PlayerMovement playerMovement; // Reference to the PlayerMovement script
 
     private Actions actions;
+    public AudioClip heartbeatAudio; // Heartbeat audio clip
 
     private void Start()
     {
         currentSanity = maxSanity;
-        lastSanityResetTime = Time.time; // Initialize the last reset time
-        // Get the Actions component attached to the player
+        lastSanityResetTime = Time.time; // Initialise the last reset time
         actions = player.GetComponent<Actions>();
-
         audioSource = GetComponent<AudioSource>();
     }
 
@@ -61,33 +60,34 @@ public class SanityBar : MonoBehaviour
         }
     }
 
-    // Method to reset the sanity bar to full
+    // reset the sanity bar to full
     public void ResetSanity()
     {
         currentSanity = maxSanity;
         sanityBarImage.fillAmount = 1.0f;
         lastSanityResetTime = Time.time; // Update the last reset time
+        StartCoroutine(TriggerHeartbeat());
     }
 
-    // Method to pause sanity drain
+    // pause sanity drain
     public void PauseSanityDrain()
     {
         isPaused = true;
     }
 
-    // Method to resume sanity drain
+    // resume sanity drain
     public void ResumeSanityDrain()
     {
         isPaused = false;
     }
 
-    // Method to get the current sanity percentage
+    // get the current sanity percentage
     public float GetCurrentSanityPercentage()
     {
         return (currentSanity / maxSanity) * 100f;
     }
 
-    // Method to get the time since the last sanity bar reset
+    // get the time since the last sanity bar reset
     public float GetSanityBarTimer()
     {
         return Time.time - lastSanityResetTime;
@@ -151,6 +151,28 @@ public class SanityBar : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
-}
 
+    // Coroutine to play heartbeat sound
+    private IEnumerator TriggerHeartbeat()
+    {
+        float sanityDecreaseInterval = 60f;
+        float lastSanityDecrease = 0f;
+
+        while (true)
+        {
+            // calculate current decrease in max sanity units
+            float currentSanityDecrease = maxSanity - currentSanity;
+
+            // Check if time to play heartbeat sound
+            if (currentSanityDecrease - lastSanityDecrease >= sanityDecreaseInterval)
+            {
+                Debug.Log("Playing heartbeat sound");
+                audioSource.PlayOneShot(heartbeatAudio);
+                lastSanityDecrease = currentSanityDecrease;
+            }
+
+            yield return null;
+        }
+    }
+}
 
