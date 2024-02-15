@@ -65,6 +65,18 @@ public class PlayerMovement : MonoBehaviour
         float verticalInput = Input.GetAxis("Vertical");
         bool isMoving = Mathf.Abs(horizontalInput) > 0 || Mathf.Abs(verticalInput) > 0;
 
+        float mouseX = Input.GetAxis("Mouse X") * lookSensitivity;
+        float mouseY = Input.GetAxis("Mouse Y") * lookSensitivity;
+
+        playerBody.Rotate(Vector3.up * mouseX);
+        RotateCameraVertical(mouseY);
+
+        // Reset velocity if not moving
+        if (!isMoving && isGrounded)
+        {
+            rb.velocity = Vector3.zero;
+        }
+
         if (isGrounded)
         {
             if (isMoving || Input.GetKeyDown(KeyCode.Space))
@@ -120,9 +132,6 @@ public class PlayerMovement : MonoBehaviour
                     audioSource.Stop();
                 }
             }
-
-            float mouseX = Input.GetAxis("Mouse X") * lookSensitivity;
-            float mouseY = Input.GetAxis("Mouse Y") * lookSensitivity;
 
             playerBody.Rotate(Vector3.up * mouseX);
             RotateCameraVertical(mouseY);

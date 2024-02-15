@@ -10,6 +10,7 @@ public class LevelCompletionManager : MonoBehaviour
     public AudioClip gradeDAudio;
     public GameObject gameOverUI;
     public GameObject taskUI;
+    public GameObject optionsUI;
 
     public PlayerMovement playerMovement; // Reference to the PlayerMovement script
     public OptionsMenu optionsMenu; // Reference to the OptionsMenu script
@@ -27,6 +28,7 @@ public class LevelCompletionManager : MonoBehaviour
 
     public void HandleLevelCompletion()
     {
+        optionsUI.SetActive(false);
         Debug.Log("HandleLevelCompletion called.");
         float sanityPercentage = sanityBar.GetCurrentSanityPercentage(); // Get the current sanity percentage from the SanityBar instance
 

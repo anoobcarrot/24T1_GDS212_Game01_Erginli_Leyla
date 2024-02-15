@@ -19,6 +19,8 @@ public class SanityBar : MonoBehaviour
     public Image fadePanel; // Reference to the UI panel used for fading
     public GameObject taskUI;
     public GameObject sanityBar;
+    public GameObject[] otherUIElements;
+    public GameObject optionsUI;
 
     private AudioSource audioSource; // Reference to the AudioSource component
     public PlayerMovement playerMovement; // Reference to the PlayerMovement script
@@ -112,8 +114,17 @@ public class SanityBar : MonoBehaviour
             yield return null;
         }
 
+        foreach (GameObject uiElement in otherUIElements)
+        {
+            if (uiElement.activeSelf)
+            {
+                uiElement.SetActive(false);
+            }
+        }
+
         // Ensure the panel remains black for a moment
         yield return new WaitForSeconds(1.0f);
+        optionsUI.SetActive(false);
         // Teleport the player to the target position
         player.transform.position = teleportTarget.position;
         playerMovement.LockPlayerMovement(false);

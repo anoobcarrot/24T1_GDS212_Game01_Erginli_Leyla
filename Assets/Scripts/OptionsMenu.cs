@@ -6,93 +6,86 @@ public class OptionsMenu : MonoBehaviour
     public GameObject optionsUI;
     public PlayerMovement playerMovement;
     public GameObject[] otherUIElements; // Array of other UI elements
-    public float delayBeforeOpen = 0.3f; // Delay before opening another UI element
+    public float delayBeforeToggle = 0.3f; // Delay before toggling options menu again
+    public float timeBeforeOptionsActivation = 3f; // Time before options UI can be activated after other UI elements are deactivated
 
     private bool isOptionsMenuOpen = false;
-    private Coroutine openOtherUIRoutine;
+    private bool canToggleOptions = true; // Flag to track if options UI can be toggled
+    private Coroutine toggleOptionsMenuRoutine;
+    private float timeUIDeactivated; // Time when other UI elements became deactivated
 
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape) && CanToggleOptionsMenu())
         {
-            ToggleOptionsMenu();
-        }
-
-        foreach (GameObject uiElement in otherUIElements)
-        {
-            if (uiElement.activeSelf)
-            {
-                // Close the options menu if it's open
-                if (isOptionsMenuOpen)
-                {
-                    optionsUI.SetActive(false);
-                }
-                return; // Exit the loop early if any UI is active
-            }
+            ToggleOptionsMenuWithDelay();
         }
     }
 
     private bool CanToggleOptionsMenu()
     {
-        foreach (GameObject uiElement in otherUIElements)
-        {
-            if (uiElement.activeSelf)
-            {
-                return false; // If any other UI element is active, cannot toggle options menu
-            }
-        }
-        return true; // If no other UI element is active, can toggle options menu
+        // Allow toggling options menu only if the flag is true and the specified time has passed since other UI elements became deactivated
+        return canToggleOptions && (Time.time - timeUIDeactivated) >= timeBeforeOptionsActivation;
     }
 
-    private void ToggleOptionsMenu()
+    private void ToggleOptionsMenuWithDelay()
     {
+        if (toggleOptionsMenuRoutine == null)
+        {
+            toggleOptionsMenuRoutine = StartCoroutine(ToggleOptionsMenuAfterDelay());
+        }
+    }
+
+    private IEnumerator ToggleOptionsMenuAfterDelay()
+    {
+        // Set flag to prevent options UI activation for a specified duration
+        canToggleOptions = false;
+        yield return new WaitForSeconds(delayBeforeToggle);
+
         isOptionsMenuOpen = !isOptionsMenuOpen;
         optionsUI.SetActive(isOptionsMenuOpen);
 
         if (isOptionsMenuOpen)
         {
-            
             playerMovement.LockPlayerMovement(true); // Freeze player movement
             Cursor.lockState = CursorLockMode.None; // Unlock cursor
             Cursor.visible = true; // Make cursor visible
         }
         else
         {
-            
             playerMovement.LockPlayerMovement(false); // Unfreeze player movement
             Cursor.lockState = CursorLockMode.Locked; // Lock cursor
             Cursor.visible = false; // Hide cursor
         }
+
+        toggleOptionsMenuRoutine = null; // Reset coroutine reference
+        canToggleOptions = true; // Allow toggling options UI again
     }
 
-    // Coroutine to open another UI element after a delay
-    private IEnumerator OpenOtherUIAfterDelay(GameObject uiElement)
+    private void FixedUpdate()
     {
-        yield return new WaitForSeconds(delayBeforeOpen);
-
-        // Disable options menu before opening another UI element
-        if (isOptionsMenuOpen)
-        {
-            ToggleOptionsMenu();
-        }
-
-        // Open the specified UI element
-        uiElement.SetActive(true);
+        // Update the time when other UI elements became deactivated
+        UpdateTimeUIDeactivated();
     }
 
-    // Method to start opening another UI element
-    public void OpenOtherUIWithDelay(GameObject uiElement)
+    private void UpdateTimeUIDeactivated()
     {
-        // Cancel any existing coroutine
-        if (openOtherUIRoutine != null)
+        foreach (GameObject uiElement in otherUIElements)
         {
-            StopCoroutine(openOtherUIRoutine);
+            if (uiElement.activeSelf)
+            {
+                timeUIDeactivated = Time.time;
+                return; // Exit the loop early if any UI is active
+            }
         }
-
-        // Start the coroutine to open the specified UI element after a delay
-        openOtherUIRoutine = StartCoroutine(OpenOtherUIAfterDelay(uiElement));
     }
 }
+
+
+
+
+
+
 
 
 
