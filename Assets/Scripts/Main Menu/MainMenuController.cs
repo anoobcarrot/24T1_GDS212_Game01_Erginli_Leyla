@@ -31,7 +31,6 @@ public class MainMenuController : MonoBehaviour
         if (Input.GetMouseButtonDown(0) && !isTransitioning && firstVideoPlayer.isPlaying)
         {
             StartCoroutine(TransitionToSecondVideo());
-            fadePanel.gameObject.SetActive(false);
         }
     }
 
@@ -83,6 +82,7 @@ public class MainMenuController : MonoBehaviour
             yield return null;
         }
 
+        fadePanel.gameObject.SetActive(false);
         isTransitioning = false;
     }
 
